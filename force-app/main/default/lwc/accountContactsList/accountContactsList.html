@@ -1,0 +1,24 @@
+<template>
+    <lightning-card title="Contactos de la cuenta" icon-name="standard:contact">
+        <div class="slds-p-horizontal_small slds-p-bottom_small">
+            <template if:true={hasData}>
+                <lightning-datatable
+                        key-field="Id"
+                        data={contacts}
+                        columns={columns}
+                        hide-checkbox-column>
+                </lightning-datatable>
+            </template>
+
+            <template if:true={isEmpty}>
+                <p>No hay contactos asociados a esta cuenta.</p>
+            </template>
+
+            <template if:true={hasError}>
+                <p class="slds-text-color_error">
+                    Error cargando contactos.
+                </p>
+            </template>
+        </div>
+    </lightning-card>
+</template>
