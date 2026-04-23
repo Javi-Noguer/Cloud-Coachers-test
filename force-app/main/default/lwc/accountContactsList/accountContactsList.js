@@ -25,12 +25,14 @@ export default class AccountContactsList extends LightningElement {
 
     columns = COLUMNS;
     contacts = [];
+    allContacts = [];
     error;
     sortedBy = 'Name';
     sortDirection = 'asc';
     wiredContactsResult;
     isModalOpen = false;
     editRecordId = null;
+    searchKey = '';
 
     @wire(getContacts, { accountId: '$recordId' })
     wiredContacts(result) {
@@ -38,11 +40,12 @@ export default class AccountContactsList extends LightningElement {
 
         const { error, data } = result;
         if (data) {
-            this.contacts = [...data];
+            this.allContacts = [...data];
             this.error = undefined;
-            this.sortData(this.sortedBy, this.sortDirection);
+            this.applyFiltersAndSort();
         } else if (error) {
             this.contacts = [];
+            this.allContacts = [];
             this.error = error;
         }
     }
@@ -99,30 +102,51 @@ export default class AccountContactsList extends LightningElement {
         );
     }
 
+    handleSearch(event) {
+        this.searchKey = event.target.value ? event.target.value.trim().toLowerCase() : '';
+        this.applyFiltersAndSort();
+    }
+
     handleSort(event) {
         const { fieldName: sortedBy, sortDirection } = event.detail;
         this.sortedBy = sortedBy;
         this.sortDirection = sortDirection;
-        this.sortData(sortedBy, sortDirection);
+        this.applyFiltersAndSort();
     }
 
-    sortData(fieldName, direction) {
-        const cloneData = [...this.contacts];
+    applyFiltersAndSort() {
+        let filteredData = [...this.allContacts];
 
-        cloneData.sort((a, b) => {
-            const valueA = a[fieldName] ? a[fieldName].toLowerCase() : '';
-            const valueB = b[fieldName] ? b[fieldName].toLowerCase() : '';
+        if (this.searchKey) {
+            filteredData = filteredData.filter((contact) => {
+                const name = contact.Name ? contact.Name.toLowerCase() : '';
+                const phone = contact.Phone ? contact.Phone.toLowerCase() : '';
+                const email = contact.Email ? contact.Email.toLowerCase() : '';
+                const title = contact.Title ? contact.Title.toLowerCase() : '';
+
+                return (
+                    name.includes(this.searchKey) ||
+                    phone.includes(this.searchKey) ||
+                    email.includes(this.searchKey) ||
+                    title.includes(this.searchKey)
+                );
+            });
+        }
+
+        filteredData.sort((a, b) => {
+            const valueA = a[this.sortedBy] ? a[this.sortedBy].toLowerCase() : '';
+            const valueB = b[this.sortedBy] ? b[this.sortedBy].toLowerCase() : '';
 
             if (valueA > valueB) {
-                return direction === 'asc' ? 1 : -1;
+                return this.sortDirection === 'asc' ? 1 : -1;
             }
             if (valueA < valueB) {
-                return direction === 'asc' ? -1 : 1;
+                return this.sortDirection === 'asc' ? -1 : 1;
             }
             return 0;
         });
 
-        this.contacts = cloneData;
+        this.contacts = filteredData;
     }
 
     async handleRowAction(event) {
@@ -172,6 +196,10 @@ export default class AccountContactsList extends LightningElement {
     }
 
     get isEmpty() {
-        return !this.hasError && this.contacts.length === 0;
+        return !this.hasError && this.allContacts.length === 0;
+    }
+
+    get showNoResults() {
+        return !this.hasError && this.allContacts.length > 0 && this.contacts.length === 0 && !!this.searchKey;
     }
 }

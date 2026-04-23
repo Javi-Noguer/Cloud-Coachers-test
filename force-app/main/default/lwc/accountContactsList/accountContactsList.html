@@ -7,6 +7,16 @@
                 onclick={handleNewContact}>
         </lightning-button>
 
+        <div class="slds-p-horizontal_small slds-p-top_small">
+            <lightning-input
+                    type="search"
+                    label="Buscar contactos"
+                    placeholder="Buscar por nombre, teléfono, email o role"
+                    value={searchKey}
+                    onchange={handleSearch}>
+            </lightning-input>
+        </div>
+
         <div class="slds-p-horizontal_small slds-p-bottom_small">
             <template if:true={hasData}>
                 <lightning-datatable
@@ -19,6 +29,10 @@
                         onsort={handleSort}
                         onrowaction={handleRowAction}>
                 </lightning-datatable>
+            </template>
+
+            <template if:true={showNoResults}>
+                <p>No hay resultados para la búsqueda.</p>
             </template>
 
             <template if:true={isEmpty}>
