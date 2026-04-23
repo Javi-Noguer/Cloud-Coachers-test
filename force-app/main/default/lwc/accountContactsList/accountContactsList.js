@@ -1,5 +1,4 @@
 import { LightningElement, api, wire } from 'lwc';
-import { NavigationMixin } from 'lightning/navigation';
 import { deleteRecord } from 'lightning/uiRecordApi';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
@@ -21,7 +20,7 @@ const COLUMNS = [
     }
 ];
 
-export default class AccountContactsList extends NavigationMixin(LightningElement) {
+export default class AccountContactsList extends LightningElement {
     @api recordId;
 
     columns = COLUMNS;
@@ -31,6 +30,7 @@ export default class AccountContactsList extends NavigationMixin(LightningElemen
     sortDirection = 'asc';
     wiredContactsResult;
     isModalOpen = false;
+    editRecordId = null;
 
     @wire(getContacts, { accountId: '$recordId' })
     wiredContacts(result) {
@@ -48,27 +48,38 @@ export default class AccountContactsList extends NavigationMixin(LightningElemen
     }
 
     handleNewContact() {
+        this.editRecordId = null;
         this.isModalOpen = true;
     }
 
     closeModal() {
         this.isModalOpen = false;
+        this.editRecordId = null;
     }
 
     handleSubmit(event) {
         event.preventDefault();
         const fields = event.detail.fields;
-        fields.AccountId = this.recordId;
+
+        if (!this.editRecordId) {
+            fields.AccountId = this.recordId;
+        }
+
         this.template.querySelector('lightning-record-edit-form').submit(fields);
     }
 
     async handleSuccess() {
+        const isEditing = !!this.editRecordId;
+
         this.isModalOpen = false;
+        this.editRecordId = null;
 
         this.dispatchEvent(
             new ShowToastEvent({
-                title: 'Contacto creado',
-                message: 'El contacto se ha creado correctamente.',
+                title: isEditing ? 'Contacto actualizado' : 'Contacto creado',
+                message: isEditing
+                    ? 'El contacto se ha actualizado correctamente.'
+                    : 'El contacto se ha creado correctamente.',
                 variant: 'success'
             })
         );
@@ -80,7 +91,9 @@ export default class AccountContactsList extends NavigationMixin(LightningElemen
         this.dispatchEvent(
             new ShowToastEvent({
                 title: 'Error',
-                message: 'No se pudo crear el contacto.',
+                message: this.editRecordId
+                    ? 'No se pudo actualizar el contacto.'
+                    : 'No se pudo crear el contacto.',
                 variant: 'error'
             })
         );
@@ -117,14 +130,8 @@ export default class AccountContactsList extends NavigationMixin(LightningElemen
         const row = event.detail.row;
 
         if (actionName === 'edit') {
-            this[NavigationMixin.Navigate]({
-                type: 'standard__recordPage',
-                attributes: {
-                    recordId: row.Id,
-                    objectApiName: 'Contact',
-                    actionName: 'edit'
-                }
-            });
+            this.editRecordId = row.Id;
+            this.isModalOpen = true;
         } else if (actionName === 'delete') {
             try {
                 await deleteRecord(row.Id);
@@ -146,6 +153,14 @@ export default class AccountContactsList extends NavigationMixin(LightningElemen
                 );
             }
         }
+    }
+
+    get modalTitle() {
+        return this.editRecordId ? 'Editar contacto' : 'Nuevo contacto';
+    }
+
+    get submitLabel() {
+        return this.editRecordId ? 'Guardar cambios' : 'Guardar';
     }
 
     get hasData() {

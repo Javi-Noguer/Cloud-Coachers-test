@@ -34,7 +34,12 @@
     </lightning-card>
 
     <template if:true={isModalOpen}>
-        <section role="dialog" tabindex="-1" aria-modal="true" aria-label="Nuevo contacto" class="slds-modal slds-fade-in-open">
+        <section
+                role="dialog"
+                tabindex="-1"
+                aria-modal="true"
+                aria-label={modalTitle}
+                class="slds-modal slds-fade-in-open">
             <div class="slds-modal__container">
                 <header class="slds-modal__header">
                     <lightning-button-icon
@@ -43,12 +48,13 @@
                             onclick={closeModal}
                             class="slds-modal__close">
                     </lightning-button-icon>
-                    <h2 class="slds-text-heading_medium">Nuevo contacto</h2>
+                    <h2 class="slds-text-heading_medium">{modalTitle}</h2>
                 </header>
 
                 <div class="slds-modal__content slds-p-around_medium">
                     <lightning-record-edit-form
                             object-api-name="Contact"
+                            record-id={editRecordId}
                             onsuccess={handleSuccess}
                             onerror={handleError}
                             onsubmit={handleSubmit}>
@@ -71,7 +77,7 @@
                             <lightning-button
                                     type="submit"
                                     variant="brand"
-                                    label="Guardar">
+                                    label={submitLabel}>
                             </lightning-button>
                         </div>
                     </lightning-record-edit-form>
