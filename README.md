@@ -1,18 +1,59 @@
-# Salesforce DX Project: Next Steps
+# Cloud Coachers - Salesforce Developer Technical Test
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+## Descripción
 
-## How Do You Plan to Deploy Your Changes?
+Este repositorio contiene la solución al ejercicio práctico de Salesforce Developer propuesto por Cloud Coachers.
 
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
+El objetivo del desarrollo es mostrar, en la página de detalle de una **Account**, un listado personalizado de los **Contact** asociados, incorporando funcionalidades de gestión directa desde el propio componente.
 
-## Configure Your Salesforce DX Project
+## Funcionalidades implementadas
 
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
+### Requisitos obligatorios
 
-## Read All About It
+- Componente personalizado en la página de detalle de **Account**.
+- Visualización de los contactos asociados a la cuenta.
+- Ordenación por nombre del contacto.
+- Edición de contactos desde el propio listado.
+- Eliminación de contactos desde el propio listado.
+- Visualización de los campos:
+    - Nombre
+    - Teléfono
+    - Email
+    - Role
+- Creación de nuevos contactos desde el propio listado.
+- Asociación automática del nuevo contacto a la cuenta actual.
+- Refresco automático del listado tras crear, editar o eliminar un contacto.
 
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
+### Funcionalidades opcionales
+
+- Buscador de contactos dentro del listado.
+- Configuración de campos visibles desde **Lightning App Builder** mediante una propiedad del componente (`fieldsToDisplay`), sin modificar código.
+
+
+## Decisiones técnicas
+
+La solución se ha implementado con:
+
+- **LWC (Lightning Web Components)** para la interfaz.
+- **Apex** para recuperar los contactos de la cuenta.
+- **lightning-datatable** para mostrar los registros.
+- **lightning-record-edit-form** para crear y editar contactos mediante modal.
+- **refreshApex** para refrescar automáticamente el listado.
+
+### Consideración sobre el campo "Role"
+
+En el enunciado se solicita mostrar el campo **Role** del contacto.  
+En esta implementación se ha utilizado el campo estándar **`Title`** como aproximación funcional a ese requerimiento, mostrándolo en la columna "Role".
+La evolución natural sería sustituirlo por un campo Role__c si el cliente confirmase que necesita un rol de negocio específico.
+## Estructura del proyecto
+
+```text
+force-app/main/default/
+  classes/
+    AccountContactController.cls
+    AccountContactController.cls-meta.xml
+  lwc/
+    accountContactsList/
+      accountContactsList.html
+      accountContactsList.js
+      accountContactsList.js-meta.xml
