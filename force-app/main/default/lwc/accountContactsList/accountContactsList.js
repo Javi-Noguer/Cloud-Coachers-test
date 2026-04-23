@@ -4,26 +4,41 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 import getContacts from '@salesforce/apex/AccountContactController.getContacts';
 
-const COLUMNS = [
-    { label: 'Nombre', fieldName: 'Name', type: 'text', sortable: true },
-    { label: 'Teléfono', fieldName: 'Phone', type: 'phone' },
-    { label: 'Email', fieldName: 'Email', type: 'email' },
-    { label: 'Role', fieldName: 'Title', type: 'text' },
-    {
-        type: 'action',
-        typeAttributes: {
-            rowActions: [
-                { label: 'Editar', name: 'edit' },
-                { label: 'Eliminar', name: 'delete' }
-            ]
-        }
+const FIELD_CONFIG = {
+    Name: { label: 'Nombre', fieldName: 'Name', type: 'text', sortable: true },
+    Phone: { label: 'Teléfono', fieldName: 'Phone', type: 'phone' },
+    Email: { label: 'Email', fieldName: 'Email', type: 'email' },
+    Title: { label: 'Role', fieldName: 'Title', type: 'text' }
+};
+
+const ACTION_COLUMN = {
+    type: 'action',
+    typeAttributes: {
+        rowActions: [
+            { label: 'Editar', name: 'edit' },
+            { label: 'Eliminar', name: 'delete' }
+        ]
     }
-];
+};
 
 export default class AccountContactsList extends LightningElement {
     @api recordId;
 
-    columns = COLUMNS;
+    _fieldsToDisplay = 'Name,Phone,Email,Title';
+
+    @api
+    get fieldsToDisplay() {
+        return this._fieldsToDisplay;
+    }
+
+    set fieldsToDisplay(value) {
+        this._fieldsToDisplay = value || 'Name,Phone,Email,Title';
+        this.columns = this.buildColumns();
+        this.ensureValidSortField();
+        this.applyFiltersAndSort();
+    }
+
+    columns = [];
     contacts = [];
     allContacts = [];
     error;
@@ -33,6 +48,11 @@ export default class AccountContactsList extends LightningElement {
     isModalOpen = false;
     editRecordId = null;
     searchKey = '';
+
+    connectedCallback() {
+        this.columns = this.buildColumns();
+        this.ensureValidSortField();
+    }
 
     @wire(getContacts, { accountId: '$recordId' })
     wiredContacts(result) {
@@ -47,6 +67,39 @@ export default class AccountContactsList extends LightningElement {
             this.contacts = [];
             this.allContacts = [];
             this.error = error;
+        }
+    }
+
+    getConfiguredFieldNames() {
+        const rawFields = (this.fieldsToDisplay || 'Name,Phone,Email,Title')
+            .split(',')
+            .map((field) => field.trim())
+            .filter((field) => !!field);
+
+        const validFields = rawFields.filter((field) => FIELD_CONFIG[field]);
+
+        // Mantengo Name siempre visible para no romper el requisito obligatorio
+        // de ordenar por nombre.
+        if (!validFields.includes('Name')) {
+            validFields.unshift('Name');
+        }
+
+        return [...new Set(validFields)];
+    }
+
+    buildColumns() {
+        const dynamicColumns = this.getConfiguredFieldNames().map((fieldApiName) => ({
+            ...FIELD_CONFIG[fieldApiName]
+        }));
+
+        return [...dynamicColumns, ACTION_COLUMN];
+    }
+
+    ensureValidSortField() {
+        const visibleFields = this.getConfiguredFieldNames();
+        if (!visibleFields.includes(this.sortedBy)) {
+            this.sortedBy = 'Name';
+            this.sortDirection = 'asc';
         }
     }
 
@@ -120,7 +173,7 @@ export default class AccountContactsList extends LightningElement {
         if (this.searchKey) {
             filteredData = filteredData.filter((contact) => {
                 const name = contact.Name ? contact.Name.toLowerCase() : '';
-                const phone = contact.Phone ? contact.Phone.toLowerCase() : '';
+                const phone = contact.Phone ? String(contact.Phone).toLowerCase() : '';
                 const email = contact.Email ? contact.Email.toLowerCase() : '';
                 const title = contact.Title ? contact.Title.toLowerCase() : '';
 
@@ -134,8 +187,8 @@ export default class AccountContactsList extends LightningElement {
         }
 
         filteredData.sort((a, b) => {
-            const valueA = a[this.sortedBy] ? a[this.sortedBy].toLowerCase() : '';
-            const valueB = b[this.sortedBy] ? b[this.sortedBy].toLowerCase() : '';
+            const valueA = a[this.sortedBy] ? String(a[this.sortedBy]).toLowerCase() : '';
+            const valueB = b[this.sortedBy] ? String(b[this.sortedBy]).toLowerCase() : '';
 
             if (valueA > valueB) {
                 return this.sortDirection === 'asc' ? 1 : -1;

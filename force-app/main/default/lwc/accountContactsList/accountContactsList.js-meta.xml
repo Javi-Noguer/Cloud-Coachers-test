@@ -10,6 +10,14 @@
             <objects>
                 <object>Account</object>
             </objects>
+
+            <property
+                    name="fieldsToDisplay"
+                    type="String"
+                    label="Campos visibles"
+                    description="CSV de campos visibles. Valores admitidos: Name,Phone,Email,Title"
+                    default="Name,Phone,Email,Title"
+                    placeholder="Name,Phone,Email,Title" />
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
